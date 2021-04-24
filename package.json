@@ -1,7 +1,7 @@
 {
   "name": "urn-ts",
   "version": "0.1.0",
-  "description": "A URN library with implications for type safety",
+  "description": "An RFC 8141 compliant URN library with some interesting type related functionality",
   "main": "lib/index.js",
   "scripts": {
     "build": "tsc",
