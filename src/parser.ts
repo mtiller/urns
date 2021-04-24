@@ -18,7 +18,7 @@ export function createURN<
 export function unparseURN<
   NID extends string = string,
   NSS extends string = string
->(p: ParsedURN<NID, NSS>): FullURN<NID, NSS, string> {
+>(p: Omit<ParsedURN<NID, NSS>, "nss_encoded">): FullURN<NID, NSS, string> {
   const nid = encodeURI(p.nid);
   const nss = encodeURI(p.nss);
   const rcomponent = p.rcomponent ? `?+${encodeURI(p.rcomponent)}` : "";
@@ -36,7 +36,7 @@ export function nid<NID extends string>(s: FullURN<NID, string, string>): NID {
 }
 
 export function nss<NSS extends string>(s: FullURN<string, NSS, string>): NSS {
-  return parseURN(s).nid as NSS;
+  return parseURN(s).nss as NSS;
 }
 
 export function parseURN(s: string): ParsedURN<string, string> {
@@ -44,9 +44,12 @@ export function parseURN(s: string): ParsedURN<string, string> {
   if (!results) {
     throw new Error(`String "${s}" is not a valid RFC8141 compliant URN`);
   }
+
+  /* istanbul ignore next */
   if (results.length < 3) {
     throw new Error(`Error parsing URN "${s}"`); // I don't see how this can happen
   }
+
   const nid = decodeURI(results[1]);
   const nss = decodeURI(results[2]);
   const nss_encoded = results[2];

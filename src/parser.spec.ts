@@ -1,11 +1,14 @@
 import { equivalent } from "./equivalent";
-import { parseURN, unparseURN } from "./parser";
+import { createURN, nid, nss, parseURN, unparseURN } from "./parser";
 import { ParsedURN, FullURN } from "./types";
 
 describe("Test URN parsing functionality", () => {
   const roundTrip = (s: FullURN<string, string, string>, parsed: ParsedURN) => {
     const result = parseURN(s);
     expect(result).toEqual(parsed);
+
+    expect(nid(s)).toEqual(parsed.nid);
+    expect(nss(s)).toEqual(parsed.nss);
 
     const orig = unparseURN(result);
     expect(orig).toEqual(s);
@@ -40,5 +43,34 @@ describe("Test URN parsing functionality", () => {
       qcomponent: null,
       fragment: null,
     });
+  });
+});
+
+describe("Test validation of URNs", () => {
+  it("should fail if NID is longer than 31 characters", () => {
+    expect(() =>
+      createURN("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ", "1")
+    ).toThrow("Unable to create a syntactically valid URN");
+  });
+  it("should fail if NID is empty", () => {
+    expect(() => createURN("", "a")).toThrow(
+      "Unable to create a syntactically valid URN"
+    );
+  });
+  it("should fail to unparse if NID is empty", () => {
+    expect(() =>
+      unparseURN({
+        nid: "",
+        nss: "a",
+        qcomponent: null,
+        rcomponent: null,
+        fragment: null,
+      })
+    ).toThrow("Unable to create a syntactically valid URN");
+  });
+  it("should fail if the string isn't a URN", () => {
+    expect(() => parseURN("http://example.com/path")).toThrow(
+      `String "http://example.com/path" is not a valid RFC8141 compliant URN`
+    );
   });
 });
