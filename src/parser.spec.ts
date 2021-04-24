@@ -1,6 +1,7 @@
 import { equivalent } from "./equivalent";
 import { createURN, nid, nss, parseURN, unparseURN } from "./parser";
-import { ParsedURN, FullURN } from "./types";
+import { urnSpace } from "./space";
+import { ParsedURN, FullURN, BaseURN } from "./types";
 
 describe("Test URN parsing functionality", () => {
   const roundTrip = (s: FullURN<string, string, string>, parsed: ParsedURN) => {
