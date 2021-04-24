@@ -6,5 +6,8 @@ describe("Test usage of urnSpace", () => {
     let a = space<"a" | "b">("a");
     const b = space<"b">("b");
     a = b;
+
+    const ex1 = "urn:example:c";
+    expect(space.is(ex1)).toEqual(true);
   });
 });
