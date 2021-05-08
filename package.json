@@ -1,12 +1,15 @@
 {
   "name": "urns",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "An RFC 8141 compliant URN library with some interesting type related functionality",
   "main": "lib/index.js",
   "scripts": {
     "build": "tsc",
     "test": "jest"
   },
+  "files": [
+    "lib"
+  ],
   "keywords": [
     "URN",
     "rfc8141"
