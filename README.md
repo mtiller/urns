@@ -17,7 +17,7 @@ better than the former? And then I had several realizations in quick succession.
 
 ## Add some identity
 
-The first was about the value of encoding in a URN. Yes, a URN is just a name.
+The first was about the value of encoding in a URN. Yes, a URN is just a name/string.
 But it is a qualified name. How many times have I written code that looks like
 this:
 
@@ -67,6 +67,12 @@ or, **more specifically**,
 type MongoID = `urn:mongoid:${string}`;
 ```
 
+or even,
+
+```typescript
+type MongoUserID = `urn:mongoid:user:${string}`;
+```
+
 So what's the big deal here? The big deal is that now you have _type safety_.
 Recall my previous `fetchRecord` example but rewritten slightly:
 
@@ -80,28 +86,29 @@ fetchRecord("example.com", "urn:mongoid:1569-ab32-9f7a-15b3-9ccd");
 
 Yes, the `id` argument can't be passed directly to a Mongo call because it has
 that extra `"urn:mongoid:"` in front of it. But that is easily stripped away
-either by using `slice` or (better yet) by parsing the URN and extracting the ID.
+either by using `slice` or (better yet) by parsing the URN and extracting the ID
+(which is one of the things this library takes care of).
 
 What's really great about this is that now you can't mix up your string
-arguments! If accidentally called `fetchRecord` with:
+arguments! If I accidentally called `fetchRecord` with:
 
 ```typescript
 fetchRecord("urn:mongoid:1569-ab32-9f7a-15b3-9ccd", "example.com");
 ```
 
 In this way, you can create a specially type constrained string type for pretty
-much anything and keep them straight. This is especially useful if you've find
+much anything and keep them straight. This is especially useful if you find
 yourself definiting functions with multiple (generic) `string` arguments to them
 and you want to avoid the situation where you mix things up. Once defined, each
-of these URN types partitions the potentially space of string values nicely into
+of these URN types partitions the potential space of string values nicely into
 disjoint sets.
 
 # URN Spaces
 
 This library provides the notion of a URN space. This is basically a way of
-identifying URNs with a common NID (namespace identifier). Defining such a
-space not only gives a simple means of "constructing" URNs associated with that
-NID, it gives you methods for narrowing types via TypeScript's `is`
+identifying URNs with a common NID (namespace identifier). Defining such a space
+not only gives a simple means of "constructing" URNs associated with that NID,
+it gives you methods for parsing and narrowing types via TypeScript's `is`
 functionality.
 
 # Examples
@@ -123,9 +130,22 @@ if (mongoIds.is(record3)) {
 }
 ```
 
-# Encoding
+# Caveats
+
+## RFC 8141
+
+I tried to stay as close as possible to [RFC
+8141](https://tools.ietf.org/html/rfc8141). This includes processing
+`r-components`, `q-components` and `f-components`. If you find anything in this
+library that deviates from that, let me know.
+
+## Encoding
 
 One note...you need to be careful about encoding. URNs require encoding of
 certain non-ASCII characters. As a result, even though you may assume that the
-NSS portion of the URN is some subset of strings, _e.g.,_ `" " | "a" | "b"`,
-once encoded the NSS portion may appear encoded, _e.g._ `"%20" | "a" | "b"`.
+NSS portion of the URN is some subset of strings, _e.g.,_ `" " | "a" | "b"`
+based on TypeScript types, once encoded the NSS portion may appear encoded,
+_e.g._ `"%20" | "a" | "b"`. So the actual strings may not strictly satisfy the
+types implied by the type definitions. But the strings that go in
+(pre-encoding) and come out (post-decoding) should so I don't think this is a
+big deal.
