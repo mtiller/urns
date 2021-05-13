@@ -31,3 +31,9 @@ export interface ParsedURN<
   qcomponent: string | null;
   fragment: string | null;
 }
+
+export type IsFunction<T> = (x: any) => x is T;
+
+export type Segment<T extends string> = [T, IsFunction<T>];
+
+export type GuardedType<X> = X extends IsFunction<infer T> ? T : never;
