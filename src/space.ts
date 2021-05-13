@@ -4,19 +4,19 @@ import { BaseURN, ParsedURN, Segment } from "./types";
 export interface URNSpace<NID extends string, NSS extends string, R> {
   <N extends NSS>(nss: N, decode?: (nss: string) => R): BaseURN<NID, N>;
   is(s: string): s is BaseURN<NID, NSS>;
-  decode(s: BaseURN<NID, NSS>): ParsedURN<NID, NSS>;
+  parse(s: BaseURN<NID, NSS>): ParsedURN<NID, NSS> & { trans: R };
 }
 
-export interface SpaceOptions<R> {
-  pred: (nss: string) => boolean;
-  decode: (nss: string) => R;
+export interface SpaceOptions<NSS extends string, R> {
+  pred: (nss: string) => nss is NSS;
+  trans: (nss: string) => R;
 }
 
 export function urnSpace<
   NID extends string,
   NSS extends string = string,
-  R = void
->(nid: NID, options?: Partial<SpaceOptions<R>>): URNSpace<NID, NSS, R> {
+  R = {}
+>(nid: NID, options?: Partial<SpaceOptions<NSS, R>>): URNSpace<NID, NSS, R> {
   const ret = function <N extends NSS>(nss: N): BaseURN<NID, N> {
     return createURN(nid, nss);
   };
@@ -31,9 +31,9 @@ export function urnSpace<
       if (options?.pred) {
         return options.pred(parsed.nss);
       }
-      if (options?.decode) {
+      if (options?.trans) {
         try {
-          options.decode(parsed.nss);
+          options.trans(parsed.nss);
           return true;
         } catch (e) {
           return false;
@@ -44,9 +44,11 @@ export function urnSpace<
     return false;
   };
 
-  ret.decode = (urn: BaseURN<NID, NSS>): ParsedURN<NID, NSS> => {
+  ret.parse = (urn: BaseURN<NID, NSS>): ParsedURN<NID, NSS> & { trans: R } => {
     const parsed = parseURN<NID, NSS>(urn);
-    return parsed;
+    const trans =
+      options && options.trans ? options.trans(parsed.nss) : ({} as any);
+    return { ...parsed, trans: trans };
   };
   return ret;
 }

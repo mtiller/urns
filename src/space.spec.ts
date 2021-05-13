@@ -1,3 +1,4 @@
+import { decode } from "./decode";
 import { urnSpace } from "./space";
 
 describe("Test usage of urnSpace", () => {
@@ -17,7 +18,35 @@ describe("Test usage of urnSpace", () => {
       pred: (s: string): s is "a" | "b" => s === "a" || s === "b",
     });
 
-    const ex1 = "urn:example:c";
-    expect(space.is(ex1)).toEqual(false);
+    expect(space.is("urn:example:b")).toEqual(true);
+    expect(space.is("urn:example:c")).toEqual(false);
+  });
+  it("should create a space with a decoder", () => {
+    const space = urnSpace("example", {
+      trans: decode(["id", "sub"]),
+    });
+
+    const un = space.parse("urn:example:a:b");
+    expect(un.trans.id).toEqual("a");
+    expect(un.trans.sub).toEqual("b");
+    expect(un).toEqual({
+      nid: "example",
+      nss: "a:b",
+      nss_encoded: "a:b",
+      fragment: null,
+      qcomponent: null,
+      rcomponent: null,
+      trans: {
+        id: "a",
+        sub: "b",
+      },
+    });
+  });
+  it("should throw if parts don't match", () => {
+    const space = urnSpace("example", {
+      trans: decode(["id", "sub"]),
+    });
+
+    expect(() => space.parse("urn:example:a")).toThrow();
   });
 });
