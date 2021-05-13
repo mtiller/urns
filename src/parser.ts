@@ -39,7 +39,10 @@ export function nss<NSS extends string>(s: FullURN<string, NSS, string>): NSS {
   return parseURN(s).nss as NSS;
 }
 
-export function parseURN(s: string): ParsedURN<string, string> {
+export function parseURN<
+  NID extends string = string,
+  NSS extends string = string
+>(s: string): ParsedURN<NID, NSS> {
   const results = s.match(rfc8141);
   if (!results) {
     throw new Error(`String "${s}" is not a valid RFC8141 compliant URN`);
@@ -50,8 +53,8 @@ export function parseURN(s: string): ParsedURN<string, string> {
     throw new Error(`Error parsing URN "${s}"`); // I don't see how this can happen
   }
 
-  const nid = decodeURI(results[1]);
-  const nss = decodeURI(results[2]);
+  const nid = decodeURI(results[1]) as NID;
+  const nss = decodeURI(results[2]) as NSS;
   const nss_encoded = results[2];
   const ridx = results.indexOf("?+");
   const qidx = results.indexOf("?=");

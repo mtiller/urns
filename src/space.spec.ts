@@ -13,10 +13,9 @@ describe("Test usage of urnSpace", () => {
     expect(space.is("urn:other:a")).toEqual(false);
   });
   it("should create a space with an NSS constraint", () => {
-    const space = urnSpace(
-      "example",
-      (s: string): s is "a" | "b" => s === "a" || s === "b"
-    );
+    const space = urnSpace("example", {
+      pred: (s: string): s is "a" | "b" => s === "a" || s === "b",
+    });
 
     const ex1 = "urn:example:c";
     expect(space.is(ex1)).toEqual(false);
