@@ -21,7 +21,7 @@ describe("Test usage of urnSpace", () => {
     expect(space.is("urn:example:b")).toEqual(true);
     expect(space.is("urn:example:c")).toEqual(false);
   });
-  it("should create a space with a decoder", () => {
+  it("should create a space with a transformer", () => {
     const space = urnSpace("example", {
       trans: decode(["id", "sub"]),
     });
@@ -40,6 +40,22 @@ describe("Test usage of urnSpace", () => {
         id: "a",
         sub: "b",
       },
+    });
+    expect(space.is("urn:example:a:b:c")).toEqual(false);
+    expect(space.is("urn:example:a:b")).toEqual(true);
+  });
+  it("should create a space without a transformer", () => {
+    const space = urnSpace("example");
+
+    const un = space.parse("urn:example:a:b");
+    expect(un).toEqual({
+      nid: "example",
+      nss: "a:b",
+      nss_encoded: "a:b",
+      fragment: null,
+      qcomponent: null,
+      rcomponent: null,
+      trans: {},
     });
   });
   it("should throw if parts don't match", () => {
