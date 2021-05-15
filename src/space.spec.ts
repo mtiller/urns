@@ -1,5 +1,5 @@
-import { decode } from "./decode";
-import { URNFrom, URNSpace } from "./space";
+import { mapFields } from "./map-fields";
+import { URNSpace } from "./space";
 
 describe("Test usage of urnSpace", () => {
   it("should create a simple space", () => {
@@ -46,14 +46,14 @@ describe("Test usage of urnSpace", () => {
   it("should create a space with a transformer", () => {
     /** Now we create a URNSpace with a transform function. */
     const space = new URNSpace("example", {
-      trans: decode(["id", "sub"]),
+      decode: mapFields(["id", "sub"]),
     });
 
     /** Now, when we parse a URN like this one, */
     const un = space.parse("urn:example:a:b");
     /** We get our NSS parsed for us (in this case into specified fields). */
-    expect(un.trans.id).toEqual("a");
-    expect(un.trans.sub).toEqual("b");
+    expect(un.decoded.id).toEqual("a");
+    expect(un.decoded.sub).toEqual("b");
 
     /** We can even invoke this directly and skip the parse step... */
     expect(space.nss("urn:example:a:b")).toEqual("a:b")
@@ -67,7 +67,7 @@ describe("Test usage of urnSpace", () => {
       fragment: null,
       qcomponent: null,
       rcomponent: null,
-      trans: {
+      decoded: {
         id: "a",
         sub: "b",
       },
@@ -89,13 +89,13 @@ describe("Test usage of urnSpace", () => {
       fragment: null,
       qcomponent: null,
       rcomponent: null,
-      trans: {},
+      decoded: {},
     });
   });
   it("should throw if parts don't match", () => {
     /** Create a URNSpace with a transform function */
     const space = new URNSpace("example", {
-      trans: decode(["id", "sub"]),
+      decode: mapFields(["id", "sub"]),
     });
 
     /** Now give it a URN that doesn't match the expected structure of the NSS. */

@@ -8,7 +8,7 @@ import { BaseURN, ParsedURN } from "./types";
  * namespace specific string (NSS) as well.  Furthermore, via the
  * `options` you can provide your own functions for validating
  * the NSS (see `is` functionality) and potentially providing
- * further semantic parsing of the NSS (see `trans` functionality).
+ * further semantic parsing of the NSS (see `transform` functionality).
  * 
  * With an instance of `URNSpace` in hand, it becomes very easy to
  * create new URNs and validate/parse existing URNs that belong
@@ -65,9 +65,9 @@ export class URNSpace<NID extends string, NSS extends string, R> {
        * Now check if there is an optional transformational process
        * defined and ensure that it runs without throwing an exception.
        */
-      if (this.options?.trans) {
+      if (this.options?.decode) {
         try {
-          this.options.trans(parsed.nss);
+          this.options.decode(parsed.nss);
         } catch (e) {
           return false;
         }
@@ -95,14 +95,14 @@ export class URNSpace<NID extends string, NSS extends string, R> {
    * @param urn 
    * @returns 
    */
-  parse(urn: BaseURN<NID, NSS>): ParsedURN<NID, NSS> & { trans: R } {
+  parse(urn: BaseURN<NID, NSS>): ParsedURN<NID, NSS> & { decoded: R } {
     const parsed = parseURN<NID, NSS>(urn);
     this.assume(urn);
-    const trans =
-      this.options && this.options.trans
-        ? this.options.trans(parsed.nss)
+    const decoded =
+      this.options && this.options.decode
+        ? this.options.decode(parsed.nss)
         : ({} as any);
-    return { ...parsed, trans: trans };
+    return { ...parsed, decoded };
   }
   /**
    * This helper function is for the use case where you simply want to extract the NSS value
@@ -118,7 +118,7 @@ export class URNSpace<NID extends string, NSS extends string, R> {
    * function if provided.  Otherwise, it simply returns `{}`.
    */
   decode(urn: BaseURN<NID, NSS>) {
-    return this.parse(urn).trans;
+    return this.parse(urn).decoded;
   }
 }
 
@@ -127,7 +127,7 @@ export class URNSpace<NID extends string, NSS extends string, R> {
  */
 export interface SpaceOptions<NSS extends string, R> {
   pred: (nss: string) => nss is NSS;
-  trans: (nss: string) => R;
+  decode: (nss: string) => R;
 }
 
 /**

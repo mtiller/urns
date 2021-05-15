@@ -1,5 +1,5 @@
 /**
- * This function is not strictly related to URNs.  But it is useful in conjunction with the `trans`
+ * This function is not strictly related to URNs.  But it is useful in conjunction with the `transform`
  * functionality in the `URNSpace` class.  Specifically, the `decode` function takes an array
  * of field names as an argument and returns a function that, when given a colon separated list of
  * strings (*i.e.,* the typical construction of a hierarchal namespace specific string from a URN),
@@ -20,22 +20,22 @@
  * 
  * @param x Array of field names
  */
-export function decode<T extends string>(
+export function mapFields<T extends string>(
   x: [T]
 ): (nss: string) => Record<T, string>;
-export function decode<T1 extends string, T2 extends string>(
+export function mapFields<T1 extends string, T2 extends string>(
   x: [T1, T2]
 ): (nss: string) => Record<T1 | T2, string>;
-export function decode<T1 extends string, T2 extends string, T3 extends string>(
+export function mapFields<T1 extends string, T2 extends string, T3 extends string>(
   x: [T1, T2, T3]
 ): (nss: string) => Record<T1 | T2 | T3, string>;
-export function decode<
+export function mapFields<
   T1 extends string,
   T2 extends string,
   T3 extends string,
   T4 extends string
 >(x: [T1, T2, T3, T4]): (nss: string) => Record<T1 | T2 | T3 | T4, string>;
-export function decode<
+export function mapFields<
   T1 extends string,
   T2 extends string,
   T3 extends string,
@@ -44,7 +44,7 @@ export function decode<
 >(
   x: [T1, T2, T3, T4, T5]
 ): (nss: string) => Record<T1 | T2 | T3 | T4 | T5, string>;
-export function decode(x: string[]): (nss: string) => Record<string, string> {
+export function mapFields(x: string[]): (nss: string) => Record<string, string> {
   /** Return a function that given an NSS of colon separated strings into an object. */
   return (nss: string) => {
     /** Start with an empty object */

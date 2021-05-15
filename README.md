@@ -8,7 +8,50 @@ $ yarn add ...
 
 The library includes TypeScript types.
 
-# Why URNs?
+# Functionality
+
+## Parse URNs
+
+Ensure that a given URN is valid according to RFC 8141 and extract
+all the relevant bits:
+
+```typescript
+const parsed = parseURN("example:a:b");
+```
+
+But the main functionality of this library is related to the use of `URNSpace`s...
+
+## Create URN "spaces"
+
+This library provides the notion of a `URNSpace`. This is basically a way of
+identifying URNs with a common NID (namespace identifier). Defining such a space
+not only gives a simple means of "constructing" URNs associated with that NID,
+it gives you methods for parsing and narrowing types via TypeScript's `is`
+functionality.
+
+# Examples
+
+```typescript
+const mongoIds = urnSpace("mongoId");
+const record1: URN<"mongoId", string> = mongoIds("1569-ab32-9f7a-15b3-9ccd"); // OK
+const record2: string = mongoIds("1569-ab32-9f7a-15b3-9ccd"); // Also fine, but loses type information
+const record3: URN<"mongoId", string> = "urn:mongoId:1569-ab32-9f7a-15b3-9ccd"; // works too
+const record4: URN<"mongoId", string> = "urn:postgres:1569-ab32-9f7a-15b3-9ccd"; // Nope
+const record5: URN<"mongoId", string> = "1569-ab32-9f7a-15b3-9ccd"; // Also nope
+```
+
+This also allows casting, _e.g._,
+
+```typescript
+// This narrows the type of `record3` from string to a more specific URN syntax string
+if (mongoIds.is(record3)) {
+  const id = nss(record3); // Extract the embedded hex id
+}
+```
+
+# Motivation
+
+## Why URNs?
 
 I've been vaguely aware of URNs for some time. But I never quite understood,
 what is the point? I mean a URL seems so much more useful. After all, a URN only
@@ -103,32 +146,6 @@ and you want to avoid the situation where you mix things up. Once defined, each
 of these URN types partitions the potential space of string values nicely into
 disjoint sets.
 
-# URN Spaces
-
-This library provides the notion of a URN space. This is basically a way of
-identifying URNs with a common NID (namespace identifier). Defining such a space
-not only gives a simple means of "constructing" URNs associated with that NID,
-it gives you methods for parsing and narrowing types via TypeScript's `is`
-functionality.
-
-# Examples
-
-```typescript
-const mongoIds = urnSpace("mongoId");
-const record1: URN<"mongoId", string> = mongoIds("1569-ab32-9f7a-15b3-9ccd"); // OK
-const record2: string = mongoIds("1569-ab32-9f7a-15b3-9ccd"); // Also fine, but loses type information
-const record3: URN<"mongoId", string> = "urn:mongoId:1569-ab32-9f7a-15b3-9ccd"; // works too
-const record4: URN<"mongoId", string> = "urn:postgres:1569-ab32-9f7a-15b3-9ccd"; // Nope
-const record5: URN<"mongoId", string> = "1569-ab32-9f7a-15b3-9ccd"; // Also nope
-```
-
-This also allows casting, _e.g._,
-
-```typescript
-if (mongoIds.is(record3)) {
-  const id = nss(record3); // Extract the embedded hex id
-}
-```
 
 # Caveats
 
