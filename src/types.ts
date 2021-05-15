@@ -20,6 +20,9 @@ export type BaseURN<NID extends string, NSS extends string> = FullURN<
   ""
 >;
 
+/**
+ * This is the information returned when a string is parsed as a URN.
+ */
 export interface ParsedURN<
   NID extends string = string,
   NSS extends string = string
@@ -31,9 +34,3 @@ export interface ParsedURN<
   qcomponent: string | null;
   fragment: string | null;
 }
-
-export type IsFunction<T> = (x: any) => x is T;
-
-export type Segment<T extends string> = [T, IsFunction<T>];
-
-export type GuardedType<X> = X extends IsFunction<infer T> ? T : never;

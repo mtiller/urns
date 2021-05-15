@@ -2,14 +2,19 @@ import { equivalent } from "./equivalent";
 import { createURN, nid, nss, parseURN, unparseURN } from "./parser";
 import { ParsedURN, FullURN, BaseURN } from "./types";
 
+/** This tests specifically the URN parsing, per RFC 8141 */
 describe("Test URN parsing functionality", () => {
+  /** This function decode and re-encodes the URN to ensure it round trips properly */
   const roundTrip = (s: FullURN<string, string, string>, parsed: ParsedURN) => {
+    /** First, parse it and compare against the expected parsed result */
     const result = parseURN(s);
     expect(result).toEqual(parsed);
 
+    /** Test the nide and nss functions to ensure they get the expected results */
     expect(nid(s)).toEqual(parsed.nid);
     expect(nss(s)).toEqual(parsed.nss);
 
+    /** Now "unparse" the URN and compare the result with the original. */
     const orig = unparseURN(result);
     expect(orig).toEqual(s);
     expect(equivalent(s, orig));
@@ -25,6 +30,7 @@ describe("Test URN parsing functionality", () => {
     });
   });
   it("should parse a complex URN", () => {
+    /** These exercises pretty much ever part of RFC 8141 */
     roundTrip("urn:example:a123,0%7C00~&z456/789?+abc?=xyz#12/3", {
       nid: "example",
       nss: "a123,0|00~&z456/789",
@@ -35,6 +41,7 @@ describe("Test URN parsing functionality", () => {
     });
   });
   it("should handle emojis", () => {
+    /** These case deals ensures that the NSS of the URN is properly URI decoded */
     roundTrip("urn:feeling:%F0%9F%98%83", {
       nid: "feeling",
       nss: "😃",
@@ -46,6 +53,7 @@ describe("Test URN parsing functionality", () => {
   });
 });
 
+/** These tests various other aspects of RFC 8141. */
 describe("Test validation of URNs", () => {
   it("should fail if NID is longer than 31 characters", () => {
     expect(() =>
