@@ -89,7 +89,7 @@ describe("Test usage of urnSpace", () => {
 
     expect(space.decode("urn:customer:25")).toEqual(25);
     expect(() => space.decode("urn:customer:twenty-five")).toThrow(
-      "Assumption that 'urn:customer:twenty-five' belongs to the specified URNSpace('customer') is faulty"
+      "Assumption that 'urn:customer:twenty-five' belongs to the specified URNSpace('customer') fails in decoding: NSS (twenty-five) is not a number!"
     );
   });
 

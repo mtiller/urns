@@ -43,6 +43,29 @@ export class URNSpace<NID extends string, NSS extends string, R> {
    * @returns 
    */
   is(s: string): s is BaseURN<NID, NSS> {
+    /** 
+     * Assume it is in this space and then check for exceptions.
+     * 
+     * Note: this might prove more expensive in practice in which case you could use an
+     * alternative formulate of the `assume` method here but changing how it addresses
+     * each contingency.  I opted for code reuse over optimization here.  Time will tell
+     * if that was the right call.
+     */
+    try {
+      this.assume(s);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+  /**
+   * This function is like `is`, but it assumes the result will be true.  This can save you some
+   * condition handling.  You should use this when you have a high degree of confidence that the
+   * string does actually conform this URNSpace because it will throw an exception if it doesn't.
+   * @param s 
+   * @returns 
+   */
+  assume(s: string): BaseURN<NID, NSS> {
     /** We start by parsing the string as a URN */
     const parsed = parseURN(s);
     /** Then we confirm that it conforms to the type of `BaseURN<NID, NSS>`. */
@@ -58,7 +81,7 @@ export class URNSpace<NID extends string, NSS extends string, R> {
       */
       if (this.options?.pred) {
         if (!this.options.pred(parsed.nss)) {
-          return false;
+          throw new Error(`Assumption that '${s}' belongs to the specified URNSpace('${this.nid}') is faulty, predicate failed`);
         }
       }
       /** 
@@ -69,24 +92,11 @@ export class URNSpace<NID extends string, NSS extends string, R> {
         try {
           this.options.decode(parsed.nss);
         } catch (e) {
-          return false;
+          throw new Error(`Assumption that '${s}' belongs to the specified URNSpace('${this.nid}') fails in decoding: ${e.message}`);
         }
       }
       /** If we get here, the NSS has passed all further validation we can do. */
-      return true;
-    }
-    return false;
-  }
-  /**
-   * This function is like `is`, but it assumes the result will be true.  This can save you some
-   * condition handling.  You should use this when you have a high degree of confidence that the
-   * string does actually conform this URNSpace because it will throw an exception if it doesn't.
-   * @param s 
-   * @returns 
-   */
-  assume(s: string): BaseURN<NID, NSS> {
-    if (this.is(s)) {
-      return s;
+      return s as BaseURN<NID, NSS>;
     }
     throw new Error(`Assumption that '${s}' belongs to the specified URNSpace('${this.nid}') is faulty`);
   }
