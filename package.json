@@ -14,6 +14,10 @@
     "URN",
     "rfc8141"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mtiller/urns"
+  },
   "author": "Michael M Tiller",
   "license": "MIT",
   "devDependencies": {
