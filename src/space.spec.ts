@@ -43,7 +43,7 @@ describe("Test usage of urnSpace", () => {
       "Assumption that 'urn:example:d' belongs to the specified URNSpace('example') is faulty"
     );
   });
-  it("should create a space with a transformer", () => {
+  it("should create a space with a decoder", () => {
     /** Now we create a URNSpace with a transform function. */
     const space = new URNSpace("example", {
       decode: mapFields(["id", "sub"]),
@@ -56,8 +56,8 @@ describe("Test usage of urnSpace", () => {
     expect(un.decoded.sub).toEqual("b");
 
     /** We can even invoke this directly and skip the parse step... */
-    expect(space.nss("urn:example:a:b")).toEqual("a:b")
-    expect(space.decode("urn:example:a:b")).toEqual({ id: "a", sub: "b" })
+    expect(space.nss("urn:example:a:b")).toEqual("a:b");
+    expect(space.decode("urn:example:a:b")).toEqual({ id: "a", sub: "b" });
 
     /** One additional check to make sure it parsed everything else as expected. */
     expect(un).toEqual({
@@ -77,6 +77,22 @@ describe("Test usage of urnSpace", () => {
     expect(space.is("urn:example:a:b:c")).toEqual(false);
     expect(space.is("urn:example:a:b")).toEqual(true);
   });
+
+  it("should create a space with an alternative transform", () => {
+    const space = new URNSpace("customer", {
+      decode: (nss) => {
+        const v = parseInt(nss);
+        if (Number.isNaN(v)) throw new Error(`NSS (${nss}) is not a number!`);
+        return v;
+      },
+    });
+
+    expect(space.decode("urn:customer:25")).toEqual(25);
+    expect(() => space.decode("urn:customer:twenty-five")).toThrow(
+      "Assumption that 'urn:customer:twenty-five' belongs to the specified URNSpace('customer') is faulty"
+    );
+  });
+
   it("should create a space without a transformer", () => {
     /** A very ordinary URNSpace without transform or predicate */
     const space = new URNSpace("example");

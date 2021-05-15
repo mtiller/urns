@@ -14,7 +14,7 @@ export type FullURN<
  * we want to carefully control the possible strings that can be formulated.  Removing all the optional
  * components minimizes the possible combinations into something easier for the type system to reason about.
  */
-export type BaseURN<NID extends string, NSS extends string> = FullURN<
+export type BaseURN<NID extends string, NSS extends string = string> = FullURN<
   NID,
   NSS,
   ""
