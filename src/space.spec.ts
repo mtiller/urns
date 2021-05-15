@@ -1,20 +1,33 @@
 import { decode } from "./decode";
-import { urnSpace } from "./space";
+import { URNFrom, URNSpace } from "./space";
 
 describe("Test usage of urnSpace", () => {
   it("should create a simple space", () => {
-    const space = urnSpace("example");
-    let a = space<"a" | "b">("a");
-    const b = space<"b">("b");
+    /** Create a simple URN space that always uses the namespace identifier "example" */
+    const space = new URNSpace("example");
+    /**
+     * Create a URN inside the "example" space with a "namespace specific string" (NSS) of "a"
+     *
+     * NB - We are creating this URN with a narrowed set of possible NSS values ("a" | "b")
+     */
+    let a = space.urn<"a" | "b">("a");
+    /** Now create a URN where the only possible value of the NSS is "b" */
+    const b = space.urn<"b">("b");
+    /**
+     * This assignement should work since the domain of `b` is a proper subset
+     * of the domain of `a` (the reverse is not true)
+     */
     a = b;
 
+    /** Create a URN "by hand" and the check that it passes the `is` test */
     const ex1 = "urn:example:c";
     expect(space.is(ex1)).toEqual(true);
 
+    /** Create a URN by hand that is no part of this URN space and ensure it fails the `is` test */
     expect(space.is("urn:other:a")).toEqual(false);
   });
   it("should create a space with an NSS constraint", () => {
-    const space = urnSpace("example", {
+    const space = new URNSpace("example", {
       pred: (s: string): s is "a" | "b" => s === "a" || s === "b",
     });
 
@@ -22,7 +35,7 @@ describe("Test usage of urnSpace", () => {
     expect(space.is("urn:example:c")).toEqual(false);
   });
   it("should create a space with a transformer", () => {
-    const space = urnSpace("example", {
+    const space = new URNSpace("example", {
       trans: decode(["id", "sub"]),
     });
 
@@ -41,11 +54,12 @@ describe("Test usage of urnSpace", () => {
         sub: "b",
       },
     });
+
     expect(space.is("urn:example:a:b:c")).toEqual(false);
     expect(space.is("urn:example:a:b")).toEqual(true);
   });
   it("should create a space without a transformer", () => {
-    const space = urnSpace("example");
+    const space = new URNSpace("example");
 
     const un = space.parse("urn:example:a:b");
     expect(un).toEqual({
@@ -59,7 +73,7 @@ describe("Test usage of urnSpace", () => {
     });
   });
   it("should throw if parts don't match", () => {
-    const space = urnSpace("example", {
+    const space = new URNSpace("example", {
       trans: decode(["id", "sub"]),
     });
 

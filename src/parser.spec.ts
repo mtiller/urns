@@ -1,6 +1,5 @@
 import { equivalent } from "./equivalent";
 import { createURN, nid, nss, parseURN, unparseURN } from "./parser";
-import { urnSpace } from "./space";
 import { ParsedURN, FullURN, BaseURN } from "./types";
 
 describe("Test URN parsing functionality", () => {
