@@ -1,3 +1,5 @@
+[![Node.js CI](https://github.com/mtiller/urns/actions/workflows/node.js.yml/badge.svg)](https://github.com/mtiller/urns/actions/workflows/node.js.yml)
+
 # Installation
 
 You can install this library with:
