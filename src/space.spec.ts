@@ -52,6 +52,26 @@ describe("Test usage of urnSpace", () => {
       "Assumption that 'urn:example:d' belongs to the specified URNSpace('example') is faulty"
     );
   });
+  it("should not create invalid urns with an NSS constraint", () => {
+    /**
+     * In this case, return type of the `pred` function provides an additional
+     * constraint on the potential values for the NSS in this space.  This is
+     * picked up by TypeScripts type analysis (and, thus, allows us to detect
+     * deviations from that type in string literals).
+     **/
+    const space = new URNSpace("example", {
+      pred: (s: string): s is "a" | "b" => s === "a" || s === "b",
+    });
+
+    expect(space.is("urn:example:b")).toEqual(true);
+    expect(space.is("urn:example:c")).toEqual(false);
+    expect(() => space.urn("d")).toThrow(
+      "Assumption that 'urn:example:d' belongs to the specified URNSpace('example') is faulty"
+    );
+    expect(() => space.assume("urn:example:d")).toThrow(
+      "Assumption that 'urn:example:d' belongs to the specified URNSpace('example') is faulty"
+    );
+  });
   it("should create a space with a decoder", () => {
     /** Now we create a URNSpace with a transform function. */
     const space = new URNSpace("example", {

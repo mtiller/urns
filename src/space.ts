@@ -31,10 +31,18 @@ export class URNSpace<NID extends string, NSS extends string, R> {
    * more narrow subspace.
    */
   urn<N extends NSS>(nss: N | R): BaseURN<NID, N> {
+    let createdURN: BaseURN<NID, N>;
     if (this.options?.encode) {
-      return createURN(this.nid, this.options.encode(nss as R) as N);
+      createdURN = createURN(this.nid, this.options.encode(nss as R) as N);
+    } else {
+      createdURN = createURN(this.nid, nss as N);
     }
-    return createURN(this.nid, nss as N);
+    try {
+      this.assume(createdURN);
+      return createdURN;
+    } catch (e) {
+      throw e;
+    }
   }
   /**
    * This is the main benefit of a `URNSpace`, it allows you to perform a runtime
