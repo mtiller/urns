@@ -26,6 +26,15 @@ describe("Test usage of urnSpace", () => {
     /** Create a URN by hand that is no part of this URN space and ensure it fails the `is` test */
     expect(space.is("urn:other:a")).toEqual(false);
   });
+  it("should create a space with encoder if provided", () => {
+    const space = new URNSpace("example", {
+      // encode to v^2
+      encode: (v: number): string => {
+        return (v * v).toString()
+      }
+    })
+    expect(space.urn(2)).toEqual('urn:example:4')
+  })
   it("should create a space with an NSS constraint", () => {
     /**
      * In this case, return type of the `pred` function provides an additional
@@ -39,6 +48,26 @@ describe("Test usage of urnSpace", () => {
 
     expect(space.is("urn:example:b")).toEqual(true);
     expect(space.is("urn:example:c")).toEqual(false);
+    expect(() => space.assume("urn:example:d")).toThrow(
+      "Assumption that 'urn:example:d' belongs to the specified URNSpace('example') is faulty"
+    );
+  });
+  it("should not create invalid urns with an NSS constraint", () => {
+    /**
+     * In this case, return type of the `pred` function provides an additional
+     * constraint on the potential values for the NSS in this space.  This is
+     * picked up by TypeScripts type analysis (and, thus, allows us to detect
+     * deviations from that type in string literals).
+     **/
+    const space = new URNSpace("example", {
+      pred: (s: string): s is "a" | "b" => s === "a" || s === "b",
+    });
+
+    expect(space.is("urn:example:b")).toEqual(true);
+    expect(space.is("urn:example:c")).toEqual(false);
+    expect(() => space.urn("d")).toThrow(
+      "Assumption that 'urn:example:d' belongs to the specified URNSpace('example') is faulty"
+    );
     expect(() => space.assume("urn:example:d")).toThrow(
       "Assumption that 'urn:example:d' belongs to the specified URNSpace('example') is faulty"
     );

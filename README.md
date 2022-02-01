@@ -65,8 +65,8 @@ functionality.
 
 ```typescript
 const mongoIds = new URNSpace("mongoId");
-const record1: BaseURN<"mongoId", string> = mongoIds("1569-ab32-9f7a-15b3-9ccd"); // OK
-const record2: string = mongoIds("1569-ab32-9f7a-15b3-9ccd"); // Also fine, but loses type information
+const record1: BaseURN<"mongoId", string> = mongoIds.urn("1569-ab32-9f7a-15b3-9ccd"); // OK
+const record2: string = mongoIds.urn("1569-ab32-9f7a-15b3-9ccd"); // Also fine, but loses type information
 const record3: BaseURN<"mongoId", string> = "urn:mongoId:1569-ab32-9f7a-15b3-9ccd"; // works too
 const record4: BaseURN<"mongoId", string> = "urn:postgres:1569-ab32-9f7a-15b3-9ccd"; // Nope
 const record5: BaseURN<"mongoId", string> = "1569-ab32-9f7a-15b3-9ccd"; // Also nope
@@ -77,7 +77,7 @@ This also allows casting, _e.g._,
 ```typescript
 // This narrows the type of `record3` from string to a more specific URN syntax string
 if (mongoIds.is(record3)) {
-  const id = nss(record3); // Extract the embedded hex id
+  const id = mongoIds.nss(record3); // Extract the embedded hex id
 }
 ```
 
