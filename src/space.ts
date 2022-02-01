@@ -30,8 +30,11 @@ export class URNSpace<NID extends string, NSS extends string, R> {
    * This allows you to deliberately create URNs that are part of a
    * more narrow subspace.
    */
-  urn<N extends NSS>(nss: N, decode?: (nss: string) => R): BaseURN<NID, N> {
-    return createURN(this.nid, nss);
+  urn<N extends NSS>(nss: N | R): BaseURN<NID, N> {
+    if (this.options?.encode) {
+      return createURN(this.nid, this.options.encode(nss as R) as N);
+    }
+    return createURN(this.nid, nss as N);
   }
   /**
    * This is the main benefit of a `URNSpace`, it allows you to perform a runtime
@@ -92,7 +95,7 @@ export class URNSpace<NID extends string, NSS extends string, R> {
         try {
           this.options.decode(parsed.nss);
         } catch (e) {
-          throw new Error(`Assumption that '${s}' belongs to the specified URNSpace('${this.nid}') fails in decoding: ${e.message}`);
+          throw new Error(`Assumption that '${s}' belongs to the specified URNSpace('${this.nid}') fails in decoding: ${(e as Error).message}`);
         }
       }
       /** If we get here, the NSS has passed all further validation we can do. */
@@ -137,6 +140,7 @@ export class URNSpace<NID extends string, NSS extends string, R> {
  */
 export interface SpaceOptions<NSS extends string, R> {
   pred: (nss: string) => nss is NSS;
+  encode: (val: R) => string;
   decode: (nss: string) => R;
 }
 

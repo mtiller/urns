@@ -26,6 +26,15 @@ describe("Test usage of urnSpace", () => {
     /** Create a URN by hand that is no part of this URN space and ensure it fails the `is` test */
     expect(space.is("urn:other:a")).toEqual(false);
   });
+  it("should create a space with encoder if provided", () => {
+    const space = new URNSpace("example", {
+      // encode to v^2
+      encode: (v: number): string => {
+        return (v * v).toString()
+      }
+    })
+    expect(space.urn(2)).toEqual('urn:example:4')
+  })
   it("should create a space with an NSS constraint", () => {
     /**
      * In this case, return type of the `pred` function provides an additional
