@@ -30,11 +30,11 @@ describe("Test usage of urnSpace", () => {
     const space = new URNSpace("example", {
       // encode to v^2
       encode: (v: number): string => {
-        return (v * v).toString()
-      }
-    })
-    expect(space.urn(2)).toEqual('urn:example:4')
-  })
+        return (v * v).toString();
+      },
+    });
+    expect(space.urn(2)).toEqual("urn:example:4");
+  });
   it("should create a space with an NSS constraint", () => {
     /**
      * In this case, return type of the `pred` function provides an additional
@@ -105,6 +105,15 @@ describe("Test usage of urnSpace", () => {
     /** Finally, the transform function also provides additional levels of validation. */
     expect(space.is("urn:example:a:b:c")).toEqual(false);
     expect(space.is("urn:example:a:b")).toEqual(true);
+  });
+
+  it("should creation and querying of full URNs (URNs with components)", () => {
+    const space = new URNSpace("ref");
+    const ex1 = space.fullUrn("foo", { q: { x: "5" } });
+    expect(ex1).toEqual("urn:ref:foo?=x=5");
+    expect(space.is(ex1)).toEqual(false);
+    expect(space.isFull(ex1)).toEqual(true);
+    expect(space.nss(ex1)).toEqual("foo");
   });
 
   it("should create a space with an alternative transform", () => {

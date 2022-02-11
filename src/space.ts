@@ -1,5 +1,5 @@
-import { createURN, parseURN } from "./parser";
-import { BaseURN, ParsedURN } from "./types";
+import { ComponentMaps, createFullURN, createURN, parseURN } from "./parser";
+import { BaseURN, FullURN, ParsedURN } from "./types";
 
 /**
  * The `URNSpace` class allows you to define a space of URNs defined
@@ -44,12 +44,37 @@ export class URNSpace<NID extends string, NSS extends string, R> {
       throw e;
     }
   }
+
+  /**
+   * This creates a URN that will no longer conform to the BaseURN type (which assumes no components).
+   * But it is still useful to create full URNs (with components) within a space.
+   **/
+  fullUrn<N extends NSS>(
+    nss: N | R,
+    components: ComponentMaps
+  ): FullURN<NID, N, string> {
+    let createdURN: FullURN<NID, N, string>;
+    if (this.options?.encode) {
+      createdURN = createFullURN(
+        this.nid,
+        this.options.encode(nss as R) as N,
+        components
+      );
+    } else {
+      createdURN = createFullURN(this.nid, nss as N, components);
+    }
+    return createdURN;
+  }
+
   /**
    * This is the main benefit of a `URNSpace`, it allows you to perform a runtime
    * check that narrows the scope of an ordinary string down to that of a member
    * of this URNSpace.  This is useful if, for example, you are deserializing
    * content (e.g., from a JSON payload) and you want to ensure that a given
    * string is in fact of the (URN) type you expect.
+   *
+   * NB - This confirms that the URN is a base URN (no components).  If you are
+   * dealing with a full URN, use isFull
    * @param s
    * @returns
    */
@@ -58,12 +83,45 @@ export class URNSpace<NID extends string, NSS extends string, R> {
      * Assume it is in this space and then check for exceptions.
      *
      * Note: this might prove more expensive in practice in which case you could use an
-     * alternative formulate of the `assume` method here but changing how it addresses
+     * alternative formulation of the `assume` method here but changing how it addresses
      * each contingency.  I opted for code reuse over optimization here.  Time will tell
      * if that was the right call.
      */
     try {
       this.assume(s);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+  /**
+   * Check if this string qualifies as a full URN belonging to this URN space.
+   *
+   * @param s A string which may be a full URN in this space, or it may not
+   * @returns
+   */
+  isFull(s: string): s is FullURN<NID, NSS, string> {
+    /**
+     * Assume it is in this space and then check for exceptions.
+     *
+     * Note: this might prove more expensive in practice in which case you could use an
+     * alternative formulation of the `assume` method here but changing how it addresses
+     * each contingency.  I opted for code reuse over optimization here.  Time will tell
+     * if that was the right call.
+     */
+    try {
+      /** We start by parsing the string as a URN */
+      const parsed = parseURN(s);
+
+      /** First check the NID */
+      if (parsed.nid !== this.nid) return false;
+
+      /** Next, check the NSS if a predicate is defined */
+      if (this.options?.pred) {
+        if (!this.options.pred(parsed.nss)) {
+          return false;
+        }
+      }
       return true;
     } catch (e) {
       return false;
@@ -120,18 +178,28 @@ export class URNSpace<NID extends string, NSS extends string, R> {
     );
   }
   /**
-   * This function parses the provided URN and also invokes the optional `transform` function (if provided).
+   * This function parses the provided URN and also invokes the optional `decode` function (if provided).
    * @param urn
    * @returns
    */
-  parse(urn: BaseURN<NID, NSS>): ParsedURN<NID, NSS> & { decoded: R } {
+  parse(urn: FullURN<NID, NSS, string>): ParsedURN<NID, NSS> & { decoded: R } {
     const parsed = parseURN<NID, NSS>(urn);
-    this.assume(urn);
-    const decoded =
-      this.options && this.options.decode
-        ? this.options.decode(parsed.nss)
-        : ({} as any);
-    return { ...parsed, decoded };
+    if (!this.isFull(urn)) {
+      throw new Error(
+        `Assumption that '${urn}' belongs to the specified URNSpace('${this.nid}') is faulty`
+      );
+    }
+    try {
+      const decoded =
+        this.options && this.options.decode
+          ? this.options.decode(parsed.nss)
+          : ({} as any);
+      return { ...parsed, decoded };
+    } catch (e: any) {
+      throw new Error(
+        `Assumption that '${urn}' belongs to the specified URNSpace('${this.nid}') fails in decoding: ${e.message}`
+      );
+    }
   }
   /**
    * This helper function is for the use case where you simply want to extract the NSS value
@@ -139,14 +207,14 @@ export class URNSpace<NID extends string, NSS extends string, R> {
    * @param urn
    * @returns Namespace specific string
    */
-  nss(urn: BaseURN<NID, NSS>) {
+  nss(urn: FullURN<NID, NSS, string>) {
     return this.parse(urn).nss;
   }
   /**
    * This is another helper function that provides the result of the optional `transform`
    * function if provided.  Otherwise, it simply returns `{}`.
    */
-  decode(urn: BaseURN<NID, NSS>) {
+  decode(urn: FullURN<NID, NSS, string>) {
     return this.parse(urn).decoded;
   }
 }
@@ -169,3 +237,15 @@ export interface SpaceOptions<NSS extends string, R> {
  */
 export type URNFrom<S extends URNSpace<string, string, any>> =
   S extends URNSpace<infer NID, infer NSS, infer R> ? BaseURN<NID, NSS> : never;
+
+/**
+ * A special conditional type that can be used to extract the type
+ * associated with URNs in that `URNSpace`
+ *
+ * For example, `URNFrom<typeof s>` will return the type for URNs
+ * that belong to the `URNSpace` `s`.
+ */
+export type FullURNFrom<S extends URNSpace<string, string, any>> =
+  S extends URNSpace<infer NID, infer NSS, infer R>
+    ? FullURN<NID, NSS, string>
+    : never;

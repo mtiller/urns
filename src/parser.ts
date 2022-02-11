@@ -2,23 +2,68 @@ import { ParsedURN, FullURN, BaseURN } from "./types";
 
 /**
  * This is a Javascript regular expression for a URN that is compliant with RFC 8141.
- * 
+ *
  * You can find a bit more commentary on this here:
- * 
+ *
  * https://stackoverflow.com/questions/59032211/regex-which-matches-urn-by-rfc8141#comment118833940_59048720
- * 
+ *
  * You can also play around with the Regexp interactively here:
- * 
+ *
  * https://regex101.com/r/WMty99/1
  */
-const rfc8141 = /^urn:([a-z0-9][a-z0-9-]{1,31}):((?:[-a-z0-9()+,.:=@;$_!*'&~\/]|%[0-9a-f]{2})+)(?:(\?\+)((?:(?!\?=)(?:[-a-z0-9()+,.:=@;$_!*'&~\/\?]|%[0-9a-f]{2}))*))?(?:(\?=)((?:(?!#).)*))?(?:(#)((?:[-a-z0-9()+,.:=@;$_!*'&~\/\?]|%[0-9a-f]{2})*))?$/i;
+const rfc8141 =
+  /^urn:([a-z0-9][a-z0-9-]{1,31}):((?:[-a-z0-9()+,.:=@;$_!*'&~\/]|%[0-9a-f]{2})+)(?:(\?\+)((?:(?!\?=)(?:[-a-z0-9()+,.:=@;$_!*'&~\/\?]|%[0-9a-f]{2}))*))?(?:(\?=)((?:(?!#).)*))?(?:(#)((?:[-a-z0-9()+,.:=@;$_!*'&~\/\?]|%[0-9a-f]{2})*))?$/i;
+
+/** Used to pass q/r/f components into the urn construction */
+export interface ComponentMaps {
+  r?: string;
+  q?: Record<string, string> | string;
+  f?: string;
+}
 
 /**
- * This function takes a given NID and NSS and creates a URN.  This is relatively straight forward.  The 
+ * This function takes a given NID and NSS and creates a full URN.  This is relatively straight forward.  The
  * only real complexity comes from handling the URI encoding.
- * @param nid 
- * @param nss 
- * @returns 
+ * @param nid
+ * @param nss
+ * @returns
+ */
+export function createFullURN<
+  NID extends string = string,
+  NSS extends string = string
+>(nid: NID, nss: NSS, components?: ComponentMaps): FullURN<NID, NSS, string> {
+  /** Encode the NID */
+  const encoded_nid = encodeURI(nid);
+  /** Encode the NSS */
+  const encoded_nss = encodeURI(nss);
+  let ret = `urn:${encoded_nid}:${encoded_nss}`;
+
+  if (components?.r) {
+    ret += `?+${encodeURIComponent(components.r)}`;
+  }
+  if (components?.q) {
+    const elements = Object.entries(components.q).map(
+      ([key, value]) =>
+        `${encodeURIComponent(key)}=${encodeURIComponent(value)}`
+    );
+    ret += `?=${elements.join("&")}`;
+  }
+  if (components?.f) {
+    ret += `#${components.f}`;
+  }
+  /** Ensure the result satisfies the regular expression */
+  if (!rfc8141.test(ret)) {
+    throw new Error("Unable to create a syntactically valid URN");
+  }
+  return ret as FullURN<NID, NSS, string>;
+}
+
+/**
+ * This function takes a given NID and NSS and creates a URN.  This is relatively straight forward.  The
+ * only real complexity comes from handling the URI encoding.
+ * @param nid
+ * @param nss
+ * @returns
  */
 export function createURN<
   NID extends string = string,
@@ -28,7 +73,8 @@ export function createURN<
   const encoded_nid = encodeURI(nid);
   /** Encode the NSS */
   const encoded_nss = encodeURI(nss);
-  const ret = `urn:${encoded_nid}:${encoded_nss}`;
+  let ret = `urn:${encoded_nid}:${encoded_nss}`;
+
   /** Ensure the result satisfies the regular expression */
   if (!rfc8141.test(ret)) {
     throw new Error("Unable to create a syntactically valid URN");
@@ -41,8 +87,8 @@ export function createURN<
  * of the `parse` function and reverses it to form the original URN.  This is quite
  * similar to the `createURN` function above except that it handles components as
  * well.
- * @param p 
- * @returns 
+ * @param p
+ * @returns
  */
 export function unparseURN<
   NID extends string = string,
@@ -77,8 +123,8 @@ export function nss<NSS extends string>(s: FullURN<string, NSS, string>): NSS {
  * the various aspects of the URN.  Much of the "heavy lifting" here is done
  * by the regular expression parsing itself.  But there are a few more bits
  * we need to do in the function as well.
- * @param s 
- * @returns 
+ * @param s
+ * @returns
  */
 export function parseURN<
   NID extends string = string,
@@ -103,7 +149,7 @@ export function parseURN<
   /** We keep the encoded NSS as well */
   const nss_encoded = results[2];
 
-  /** 
+  /**
    * Now we have to go through the Regexp output and match it up with
    * any r-component, q-component or f-component, if present.
    */
