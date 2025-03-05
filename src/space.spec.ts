@@ -1,6 +1,36 @@
 import { mapFields } from "./map-fields";
+import { createURN } from "./parser";
 import { URNSpace } from "./space";
+import { BaseURN } from "./types";
 
+class CachedURNSpace<
+  NID extends string,
+  NSS extends string,
+  R
+> extends URNSpace<NID, NSS, R> {
+  private cache: Map<string, BaseURN<NID, any>> = new Map();
+  protected _createURN<NSS extends string>(nid: NID, nss: NSS) {
+    const key = `${nid}:${nss}`;
+    const res = this.cache.get(key) || super._createURN(nid, nss);
+    this.cache.set(key, (res + "CACHED") as any);
+    return res;
+  }
+}
+
+describe("Should test derived class", () => {
+  it("should create a simple space", () => {
+    /** Create a simple URN space that always uses the namespace identifier "example" */
+    const space = new CachedURNSpace("example");
+    /**
+     * Create a URN inside the "example" space with a "namespace specific string" (NSS) of "a"
+     *
+     * NB - We are creating this URN with a narrowed set of possible NSS values ("a" | "b")
+     */
+    let a = space.urn<"a" | "b">("a");
+    let aCached = space.urn<"a" | "b">("a");
+    expect(aCached).toEqual(a + "CACHED");
+  });
+});
 describe("Test usage of urnSpace", () => {
   it("should create a simple space", () => {
     /** Create a simple URN space that always uses the namespace identifier "example" */

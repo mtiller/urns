@@ -26,12 +26,13 @@ export interface ComponentMaps {
  * only real complexity comes from handling the URI encoding.
  * @param nid
  * @param nss
+ * @param {boolean=} skipVerification skip test against rfc8141 regex (optional, default false)
  * @returns
  */
 export function createFullURN<
   NID extends string = string,
   NSS extends string = string
->(nid: NID, nss: NSS, components?: ComponentMaps): FullURN<NID, NSS, string> {
+>(nid: NID, nss: NSS, components?: ComponentMaps, skipVerification?: boolean): FullURN<NID, NSS, string> {
   /** Encode the NID */
   const encoded_nid = encodeURI(nid);
   /** Encode the NSS */
@@ -52,7 +53,7 @@ export function createFullURN<
     ret += `#${components.f}`;
   }
   /** Ensure the result satisfies the regular expression */
-  if (!rfc8141.test(ret)) {
+  if (!skipVerification && !rfc8141.test(ret)) {
     throw new Error("Unable to create a syntactically valid URN");
   }
   return ret as FullURN<NID, NSS, string>;
@@ -63,12 +64,13 @@ export function createFullURN<
  * only real complexity comes from handling the URI encoding.
  * @param nid
  * @param nss
+ * @param {boolean=} skipVerification skip test against rfc8141 regex (optional, default false)
  * @returns
  */
 export function createURN<
   NID extends string = string,
   NSS extends string = string
->(nid: NID, nss: NSS): BaseURN<NID, NSS> {
+>(nid: NID, nss: NSS, skipVerification?: boolean): BaseURN<NID, NSS> {
   /** Encode the NID */
   const encoded_nid = encodeURI(nid);
   /** Encode the NSS */
@@ -76,7 +78,7 @@ export function createURN<
   let ret = `urn:${encoded_nid}:${encoded_nss}`;
 
   /** Ensure the result satisfies the regular expression */
-  if (!rfc8141.test(ret)) {
+  if (!skipVerification && !rfc8141.test(ret)) {
     throw new Error("Unable to create a syntactically valid URN");
   }
   return ret as BaseURN<NID, NSS>;
@@ -88,12 +90,13 @@ export function createURN<
  * similar to the `createURN` function above except that it handles components as
  * well.
  * @param p
+ * @param {boolean=} skipVerification skip test against rfc8141 regex (optional, default false)
  * @returns
  */
 export function unparseURN<
   NID extends string = string,
   NSS extends string = string
->(p: Omit<ParsedURN<NID, NSS>, "nss_encoded">): FullURN<NID, NSS, string> {
+>(p: Omit<ParsedURN<NID, NSS>, "nss_encoded">, skipVerification?: boolean): FullURN<NID, NSS, string> {
   /** Again, ensure everything is properly URI encoded */
   const nid = encodeURI(p.nid);
   const nss = encodeURI(p.nss);
@@ -102,7 +105,7 @@ export function unparseURN<
   const fragment = p.fragment ? `#${encodeURI(p.fragment)}` : "";
   const ret = `urn:${nid}:${nss}${rcomponent}${qcomponent}${fragment}`;
   /** Ensure the result is a valid URN */
-  if (!rfc8141.test(ret)) {
+  if (!skipVerification && !rfc8141.test(ret)) {
     throw new Error("Unable to create a syntactically valid URN");
   }
   return ret as FullURN<NID, NSS, string>;
@@ -128,7 +131,7 @@ export function nss<NSS extends string>(s: FullURN<string, NSS, string>): NSS {
  */
 export function parseURN<
   NID extends string = string,
-  NSS extends string = string
+  NSS extends string = string,
 >(s: string): ParsedURN<NID, NSS> {
   /** Parse this using the regular expression at the top of this file */
   const results = s.match(rfc8141);

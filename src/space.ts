@@ -24,6 +24,21 @@ export class URNSpace<NID extends string, NSS extends string, R> {
     protected nid: NID,
     protected options?: Partial<SpaceOptions<NSS, R>>
   ) {}
+
+  // this is here so the enduser can easilu overwrite these for instance to use caching
+  // in derived class
+  protected _parseURN<NSS extends string >(s: string) {
+    return parseURN<NID,NSS>(s);
+  }
+
+  protected _createURN<NSS extends string >(nid:NID,nss: NSS ) {
+    return createURN(nid,nss,this.options?.skipVerification)
+  }
+
+  protected _createFullURN<NSS extends string >(nid:NID,nss: NSS, components?: ComponentMaps ) {
+    return createFullURN(nid, nss,  components, this.options?.skipVerification)
+  }
+
   /**
    * Create a new URN in this namespace.  The type parameter `N` here
    * can be a subtype of the `NSS` type parameter of the `URNSpace` itself.
@@ -33,9 +48,9 @@ export class URNSpace<NID extends string, NSS extends string, R> {
   urn<N extends NSS>(nss: N | R): BaseURN<NID, N> {
     let createdURN: BaseURN<NID, N>;
     if (this.options?.encode) {
-      createdURN = createURN(this.nid, this.options.encode(nss as R) as N);
+      createdURN = this._createURN(this.nid, this.options.encode(nss as R) as N);
     } else {
-      createdURN = createURN(this.nid, nss as N);
+      createdURN = this._createURN(this.nid, nss as N);
     }
     try {
       this.assume(createdURN);
@@ -55,13 +70,13 @@ export class URNSpace<NID extends string, NSS extends string, R> {
   ): FullURN<NID, N, string> {
     let createdURN: FullURN<NID, N, string>;
     if (this.options?.encode) {
-      createdURN = createFullURN(
+      createdURN = this._createFullURN(
         this.nid,
         this.options.encode(nss as R) as N,
         components
       );
     } else {
-      createdURN = createFullURN(this.nid, nss as N, components);
+      createdURN = this._createFullURN(this.nid, nss as N, components);
     }
     return createdURN;
   }
@@ -111,7 +126,7 @@ export class URNSpace<NID extends string, NSS extends string, R> {
      */
     try {
       /** We start by parsing the string as a URN */
-      const parsed = parseURN(s);
+      const parsed = this._parseURN(s);
 
       /** First check the NID */
       if (parsed.nid !== this.nid) return false;
@@ -136,7 +151,7 @@ export class URNSpace<NID extends string, NSS extends string, R> {
    */
   assume(s: string): BaseURN<NID, NSS> {
     /** We start by parsing the string as a URN */
-    const parsed = parseURN(s);
+    const parsed = this._parseURN(s);
     /** Then we confirm that it conforms to the type of `BaseURN<NID, NSS>`. */
     if (
       parsed.nid === this.nid &&
@@ -183,7 +198,7 @@ export class URNSpace<NID extends string, NSS extends string, R> {
    * @returns
    */
   parse(urn: FullURN<NID, NSS, string>): ParsedURN<NID, NSS> & { decoded: R } {
-    const parsed = parseURN<NID, NSS>(urn);
+    const parsed = this._parseURN< NSS>(urn);
     if (!this.isFull(urn)) {
       throw new Error(
         `Assumption that '${urn}' belongs to the specified URNSpace('${this.nid}') is faulty`
@@ -223,9 +238,10 @@ export class URNSpace<NID extends string, NSS extends string, R> {
  * A type that indicates the options that can be passed when creating a `URNSpace`.
  */
 export interface SpaceOptions<NSS extends string, R> {
-  pred: (nss: string) => nss is NSS;
-  encode: (val: R) => string;
-  decode: (nss: string) => R;
+  pred?: (nss: string) => nss is NSS;
+  encode?: (val: R) => string;
+  decode?: (nss: string) => R;
+  skipVerification?: boolean
 }
 
 /**
