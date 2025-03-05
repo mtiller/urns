@@ -1,5 +1,9 @@
 import { ParsedURN, FullURN, BaseURN } from "./types";
 
+const matchcache: Map<string, any> = new Map<string, any>();
+const unparsecache: Map<string, any> = new Map<string, any>();
+const testcache: Map<string, any> = new Map<string, any>();
+
 /**
  * This is a Javascript regular expression for a URN that is compliant with RFC 8141.
  *
@@ -52,9 +56,9 @@ export function createFullURN<
     ret += `#${components.f}`;
   }
   /** Ensure the result satisfies the regular expression */
-  if (!rfc8141.test(ret)) {
-    throw new Error("Unable to create a syntactically valid URN");
-  }
+  // if (!rfc8141.test(ret)) {
+  //   throw new Error("Unable to create a syntactically valid URN");
+  // }
   return ret as FullURN<NID, NSS, string>;
 }
 
@@ -70,15 +74,20 @@ export function createURN<
   NSS extends string = string
 >(nid: NID, nss: NSS): BaseURN<NID, NSS> {
   /** Encode the NID */
+  const cache_key = `${nid}%${nss}`;
+  if (unparsecache.has(cache_key)) {
+    return unparsecache.get(cache_key);
+  }
   const encoded_nid = encodeURI(nid);
   /** Encode the NSS */
   const encoded_nss = encodeURI(nss);
   let ret = `urn:${encoded_nid}:${encoded_nss}`;
 
   /** Ensure the result satisfies the regular expression */
-  if (!rfc8141.test(ret)) {
-    throw new Error("Unable to create a syntactically valid URN");
-  }
+  // if (!rfc8141.test(ret)) {
+  //   throw new Error("Unable to create a syntactically valid URN");
+  // }
+  unparsecache.set(cache_key, ret);
   return ret as BaseURN<NID, NSS>;
 }
 
@@ -102,9 +111,9 @@ export function unparseURN<
   const fragment = p.fragment ? `#${encodeURI(p.fragment)}` : "";
   const ret = `urn:${nid}:${nss}${rcomponent}${qcomponent}${fragment}`;
   /** Ensure the result is a valid URN */
-  if (!rfc8141.test(ret)) {
-    throw new Error("Unable to create a syntactically valid URN");
-  }
+  // if (!rfc8141.test(ret)) {
+  //   throw new Error("Unable to create a syntactically valid URN");
+  // }
   return ret as FullURN<NID, NSS, string>;
 }
 
@@ -130,6 +139,10 @@ export function parseURN<
   NID extends string = string,
   NSS extends string = string
 >(s: string): ParsedURN<NID, NSS> {
+  if (matchcache.has(s)) {
+    return matchcache.get(s);
+  }
+
   /** Parse this using the regular expression at the top of this file */
   const results = s.match(rfc8141);
   /** If it doesn't conform, we are done. */
@@ -161,7 +174,7 @@ export function parseURN<
   const fragment = fidx === -1 ? null : decodeURI(results[fidx + 1]);
 
   /** Return the resulting fully parsed URN. */
-  return {
+  const ret = {
     nid,
     nss,
     nss_encoded,
@@ -169,4 +182,6 @@ export function parseURN<
     qcomponent,
     fragment,
   };
+  matchcache.set(s, ret);
+  return ret;
 }

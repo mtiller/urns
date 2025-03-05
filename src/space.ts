@@ -24,6 +24,9 @@ export class URNSpace<NID extends string, NSS extends string, R> {
     protected nid: NID,
     protected options?: Partial<SpaceOptions<NSS, R>>
   ) {}
+
+  private cache = new Map<any, any>();
+  private parsecache = new Map<any, any>();
   /**
    * Create a new URN in this namespace.  The type parameter `N` here
    * can be a subtype of the `NSS` type parameter of the `URNSpace` itself.
@@ -32,12 +35,16 @@ export class URNSpace<NID extends string, NSS extends string, R> {
    */
   urn<N extends NSS>(nss: N | R): BaseURN<NID, N> {
     let createdURN: BaseURN<NID, N>;
+    if (this.cache.get(nss)) {
+      return this.cache.get(nss);
+    }
     if (this.options?.encode) {
       createdURN = createURN(this.nid, this.options.encode(nss as R) as N);
     } else {
       createdURN = createURN(this.nid, nss as N);
     }
     try {
+      this.cache.set(nss, createURN);
       this.assume(createdURN);
       return createdURN;
     } catch (e) {
@@ -183,6 +190,9 @@ export class URNSpace<NID extends string, NSS extends string, R> {
    * @returns
    */
   parse(urn: FullURN<NID, NSS, string>): ParsedURN<NID, NSS> & { decoded: R } {
+    if (this.parsecache.has(urn)) {
+      return this.parsecache.get(urn);
+    }
     const parsed = parseURN<NID, NSS>(urn);
     if (!this.isFull(urn)) {
       throw new Error(
@@ -194,7 +204,9 @@ export class URNSpace<NID extends string, NSS extends string, R> {
         this.options && this.options.decode
           ? this.options.decode(parsed.nss)
           : ({} as any);
-      return { ...parsed, decoded };
+      const ret = { ...parsed, decoded };
+      this.parsecache.set(urn, ret);
+      return ret;
     } catch (e: any) {
       throw new Error(
         `Assumption that '${urn}' belongs to the specified URNSpace('${this.nid}') fails in decoding: ${e.message}`
